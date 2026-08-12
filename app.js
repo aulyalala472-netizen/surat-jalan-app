@@ -491,11 +491,19 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
         items: items
     };
 
-    const res = await fetch('/api/surat-jalan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
+    const res = awaitfetch('/api/surat-jalan', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(dataFormSuratJalan) // ganti dengan variabel object data Anda
+})
+.then(response => {
+  if (!response.ok) {
+    throw new Error('Gagal menyimpan data');
+  }
+  return response.json();
+})
 
     if (res.ok) {
         alert('Surat jalan berhasil disimpan!');
