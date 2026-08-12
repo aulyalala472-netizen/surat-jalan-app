@@ -1,19 +1,19 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 
-// Middleware parsing data JSON dari frontend
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Memori penampung data sementara
+// Menyajikan file statis (index.html, app.js, logo.png) secara langsung
+app.use(express.static(path.join(__dirname, '../')));
+
 let dataSuratJalan = [];
 
-// Endpoint GET untuk mengambil data
 app.get('/api/surat-jalan', (req, res) => {
   res.status(200).json(dataSuratJalan);
 });
 
-// Endpoint POST untuk menyimpan data
 app.post('/api/surat-jalan', (req, res) => {
   try {
     const inputData = req.body;
@@ -27,10 +27,15 @@ app.post('/api/surat-jalan', (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: 'Terjadi kesalahan server: ' + error.message
+      message: 'Gagal menyimpan: ' + error.message
     });
   }
 });
 
-// Export handler serverless Vercel
+// Menangani semua route selain API untuk menampilkan index.html
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../index.html'));
+});
+
 module.exports = app;
+  
