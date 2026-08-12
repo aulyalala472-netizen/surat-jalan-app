@@ -23,19 +23,19 @@ app.post('/api/surat-jalan', (req, res) => {
       return res.status(400).json({ success: false, message: 'Data tidak boleh kosong' });
     }
 
-    // Tambahkan data ke memori
-    databaseSuratJalan.push(dataBaru);
+   // Tambahkan data ke array
+    dataSuratJalan.push(inputData);
 
     // Kirim respons sukses
-    res.status(200).json({
+   return res.status(200).json({
       success: true,
-      message: 'Data berhasil disimpan',
-      data: dataBaru
+      message: "Data berhasil disimpan",
+      data: inputData
     });
-  } catch (error) {
-    res.status(500).json({
+  } catch (err) {
+    return res.status(500).json({
       success: false,
-      message: 'Terjadi kesalahan pada server: ' + error.message
+      message: err.message
     });
   }
 });
