@@ -414,8 +414,13 @@ async function loadTableData() {
         data.forEach(item => {
             const totalHargaSJ = item.items ? item.items.reduce((acc, curr) => acc + ((parseFloat(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0) : 0;
             
-            const namaBarangList = item.items ? item.items.map(i => `${i.nama_barang} (${i.qty})`).join('<br>') : '-';
-            const satuanList = item.items ? item.items.map(i => i.satuan || '-').join('<br>') : '-';
+            // PERUBAHAN DI SINI:
+            // 1. Nama Barang hanya menampilkan nama barangnya saja
+            const namaBarangList = item.items ? item.items.map(i => i.nama_barang || '-').join('<br>') : '-';
+            
+            // 2. Satuan kini menampilkan Angka Qty + Satuan (contoh: 10 Kg atau 500 Pcs)
+            const satuanList = item.items ? item.items.map(i => `${i.qty || 0} ${i.satuan || ''}`).join('<br>') : '-';
+            
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
 
             tbody.innerHTML += `
