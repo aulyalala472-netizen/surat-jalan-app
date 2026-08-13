@@ -15,7 +15,7 @@ let databaseSuratJalan = [];
 // API 1: GET ALL SURAT JALAN (BERDASARKAN DIVISI)
 app.get('/api/surat-jalan', (req, res) => {
   try {
-    const { divisi } = req.query; // 'masuk' atau 'keluar'
+    const { divisi } = req.query; // 'PPIC' atau 'MARKETING'
     let result = databaseSuratJalan;
     
     if (divisi) {
@@ -55,7 +55,43 @@ app.post('/api/surat-jalan', (req, res) => {
   }
 });
 
-// API 3: DELETE SURAT JALAN BERDASARKAN NO SURAT
+// REVISI: API BARU 3 - PUT / EDIT SURAT JALAN BERDASARKAN NO SURAT
+app.put('/api/surat-jalan/:no_surat', (req, res) => {
+  try {
+    const { no_surat } = req.params;
+    const decodedNoSurat = decodeURIComponent(no_surat);
+    const dataUpdate = req.body;
+
+    const index = databaseSuratJalan.findIndex(item => item.no_surat === decodedNoSurat);
+
+    if (index === -1) {
+      return res.status(404).json({ success: false, message: 'Data surat jalan tidak ditemukan!' });
+    }
+
+    // Jika nomor surat diubah saat edit, pastikan tidak duplikat dengan record lain
+    if (dataUpdate.no_surat !== decodedNoSurat) {
+      const adaDuplikat = databaseSuratJalan.some(item => item.no_surat === dataUpdate.no_surat);
+      if (adaDuplikat) {
+        return res.status(400).json({ success: false, message: 'Nomor Surat Jalan yang baru sudah digunakan!' });
+      }
+    }
+
+    databaseSuratJalan[index] = {
+      ...databaseSuratJalan[index],
+      ...dataUpdate
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Data surat jalan berhasil diperbarui!',
+      data: databaseSuratJalan[index]
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// API 4: DELETE SURAT JALAN BERDASARKAN NO SURAT
 app.delete('/api/surat-jalan/:no_surat', (req, res) => {
   try {
     const { no_surat } = req.params;

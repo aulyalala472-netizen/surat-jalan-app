@@ -1,3 +1,6 @@
+// Variable Global Penanda Mode Edit
+let editModeNoSurat = null; // null = Mode Tambah Baru, String = Mode Edit
+
 const MASTER_DATA = {
     "CV. CITRA PERKASA": [
         { part: "LONG 1001 NUT 12 M3", spek: "WHITE", harga: 4000, unit: "KG" },
@@ -279,7 +282,7 @@ function onSpekChange(inputElem) {
 // 6. Menambah Baris Item Baru
 function addItemRow() {
     const container = document.getElementById('itemContainer');
-    const rowId = Date.now();
+    const rowId = Date.now() + Math.floor(Math.random() * 1000);
     const divisi = document.getElementById('divisiAktif').value;
     const isPPIC = divisi === 'PPIC';
 
@@ -348,6 +351,19 @@ function resetItemContainer() {
     addItemRow();
 }
 
+// Reset Mode Edit ke Mode Normal (Simpan Baru)
+function resetEditMode() {
+    editModeNoSurat = null;
+    const btnSubmit = document.getElementById('btnSubmit');
+    const divisi = document.getElementById('divisiAktif').value;
+    
+    if (divisi === 'PPIC') {
+        btnSubmit.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Surat Jalan Masuk';
+    } else {
+        btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Simpan Surat Jalan Keluar';
+    }
+}
+
 // 10. Navigasi Tab (PPIC / Marketing)
 function switchTab(divisi) {
     const tabPpic = document.getElementById('tabPpic');
@@ -402,6 +418,7 @@ function switchTab(divisi) {
         if (formLabelBarang) formLabelBarang.innerHTML = '<i class="fa-solid fa-boxes-stacked mr-1 text-red-600"></i> Detail Barang & Harga';
     }
 
+    resetEditMode();
     resetItemContainer();
     loadTableData();
 }
@@ -436,6 +453,7 @@ async function loadTableData() {
             const satuanList = item.items ? item.items.map(i => `${i.qty || 0} ${i.satuan || ''}`).join('<br>') : '-';
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
 
+            // REVISI: Penambahan Tombol Edit Berbentuk Pensil di Kolom Aksi
             tbody.innerHTML += `
                 <tr class="bg-white hover:bg-red-50/50 transition-colors border-b border-gray-100 search-row">
                     <td class="p-3 font-bold text-red-950 align-top">${item.no_surat || '-'}</td>
@@ -446,15 +464,84 @@ async function loadTableData() {
                     <td class="p-3 text-gray-600 align-top">${spesifikasiList}</td>
                     ${divisi !== 'PPIC' ? `<td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>` : ''}
                     <td class="p-3 text-center align-top">
-                        <button onclick="deleteSuratJalan('${encodeURIComponent(item.no_surat)}')" class="bg-red-100 hover:bg-red-600 text-red-600 hover:text-white p-2 rounded-lg transition duration-200" title="Hapus Surat Jalan">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="editSuratJalan('${encodeURIComponent(item.no_surat)}')" class="bg-amber-100 hover:bg-amber-600 text-amber-600 hover:text-white p-2 rounded-lg transition duration-200" title="Edit Surat Jalan">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteSuratJalan('${encodeURIComponent(item.no_surat)}')" class="bg-red-100 hover:bg-red-600 text-red-600 hover:text-white p-2 rounded-lg transition duration-200" title="Hapus Surat Jalan">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
         });
     } catch (err) {
         console.error("Gagal memuat data tabel:", err);
+    }
+}
+
+// REVISI: Fungsi Baru untuk Memuat Data ke Form dalam Mode Edit
+async function editSuratJalan(noSurat) {
+    const decodedNoSurat = decodeURIComponent(noSurat);
+    const divisi = document.getElementById('divisiAktif').value;
+
+    try {
+        const res = await fetch(`/api/surat-jalan?divisi=${divisi}`);
+        const data = await res.json();
+        const targetData = data.find(item => item.no_surat === decodedNoSurat);
+
+        if (!targetData) {
+            alert('Data surat jalan tidak ditemukan.');
+            return;
+        }
+
+        editModeNoSurat = targetData.no_surat;
+
+        // Populate Form
+        document.getElementById('tanggal').value = targetData.tanggal || '';
+        document.getElementById('no_surat').value = targetData.no_surat || '';
+        document.getElementById('customer').value = targetData.customer || targetData.mitra || '';
+
+        // Reset & Populate Item
+        const container = document.getElementById('itemContainer');
+        container.innerHTML = '';
+
+        if (targetData.items && targetData.items.length > 0) {
+            targetData.items.forEach(item => {
+                addItemRow();
+                const lastRow = container.querySelector('.item-row:last-child');
+                
+                lastRow.querySelector('.nama-barang').value = item.nama_barang || '';
+                onPartChange(lastRow.querySelector('.nama-barang'));
+
+                lastRow.querySelector('.spesifikasi').value = item.spesifikasi || '';
+                onSpekChange(lastRow.querySelector('.spesifikasi'));
+
+                lastRow.querySelector('.jumlah-qty').value = item.qty || 0;
+                lastRow.querySelector('.satuan').value = item.satuan || 'Kg';
+
+                const hargaInput = lastRow.querySelector('.harga-satuan');
+                if (hargaInput) {
+                    hargaInput.value = item.harga || 0;
+                }
+            });
+        } else {
+            addItemRow();
+        }
+
+        updateFormTotals();
+
+        // Ubah Tombol Submit
+        const btnSubmit = document.getElementById('btnSubmit');
+        btnSubmit.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Surat Jalan';
+        
+        // Scroll Halus Ke Form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+        console.error("Gagal mengambil detail data:", err);
+        alert('Gagal mengambil detail data surat jalan.');
     }
 }
 
@@ -474,6 +561,11 @@ async function deleteSuratJalan(noSurat) {
 
         if (res.ok) {
             alert(data.message || 'Data berhasil dihapus!');
+            if (editModeNoSurat === decodedNoSurat) {
+                resetEditMode();
+                document.getElementById('formSuratJalan').reset();
+                resetItemContainer();
+            }
             loadTableData();
         } else {
             alert(data.message || 'Gagal menghapus data.');
@@ -510,7 +602,7 @@ function exportRekapBulanan() {
     }
 }
 
-// 15. Event Listener Submit Form
+// 15. Event Listener Submit Form (REVISI: Menangani POST Baru / PUT Update)
 document.getElementById('formSuratJalan').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -537,9 +629,13 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
         items: items
     };
 
+    const isEdit = editModeNoSurat !== null;
+    const url = isEdit ? `/api/surat-jalan/${encodeURIComponent(editModeNoSurat)}` : '/api/surat-jalan';
+    const method = isEdit ? 'PUT' : 'POST';
+
     try {
-        const res = await fetch('/api/surat-jalan', {
-            method: 'POST',
+        const res = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -547,10 +643,11 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
         });
 
         if (res.ok) {
-            alert('Surat jalan berhasil disimpan!');
+            alert(isEdit ? 'Surat jalan berhasil diperbarui!' : 'Surat jalan berhasil disimpan!');
             document.getElementById('formSuratJalan').reset();
             document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
             initCustomerDropdown();
+            resetEditMode();
             resetItemContainer();
             loadTableData();
         } else {
