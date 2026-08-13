@@ -26,7 +26,7 @@ const MASTER_DATA = {
         { part: "BM HEX 88 M16X45MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BM HEX 88 M18X40MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BM HEX 88 M16X30MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
-        { part: "BO HEX 88 M16X70MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
+        { part: "BO HEX 88 M16X90 MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BO HEX 10.9 M12X40MM HT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BO HEX 88 M08X40 MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BO HEX 88 M12X110MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
@@ -255,7 +255,7 @@ function onPartChange(inputElem) {
     }
 }
 
-// 5. Mengisi Harga & Satuan Otomatis (Tetap Bisa Diketik/Diedit Manual)
+// 5. Mengisi Harga & Satuan Otomatis
 function onSpekChange(inputElem) {
     const row = inputElem.closest('.item-row');
     const cust = document.getElementById('customer').value;
@@ -276,22 +276,19 @@ function onSpekChange(inputElem) {
     updateFormTotals();
 }
 
-// 6. Menambah Baris Item Baru (Menggunakan Datalist Input Manual)
+// 6. Menambah Baris Item Baru
 function addItemRow() {
     const container = document.getElementById('itemContainer');
-    const rowId = Date.now(); // ID unik untuk datalist per baris
+    const rowId = Date.now();
     const div = document.createElement('div');
     div.className = 'item-row bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2 relative';
     
     div.innerHTML = `
         <div class="grid grid-cols-12 gap-2">
-            <!-- INPUT/DROPDOWN PART -->
             <div class="col-span-6">
                 <input type="text" list="partList_${rowId}" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 nama-barang" placeholder="Pilih / Ketik Part..." oninput="onPartChange(this)" required>
                 <datalist id="partList_${rowId}" class="partList"></datalist>
             </div>
-
-            <!-- INPUT/DROPDOWN SPESIFIKASI -->
             <div class="col-span-6">
                 <input type="text" list="spekList_${rowId}" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 spesifikasi" placeholder="Pilih / Ketik Spesifikasi..." oninput="onSpekChange(this)" required>
                 <datalist id="spekList_${rowId}" class="spekList"></datalist>
@@ -299,14 +296,11 @@ function addItemRow() {
         </div>
         <div class="grid grid-cols-12 gap-2 items-center">
             <input type="number" step="0.01" placeholder="Qty / Berat" oninput="updateFormTotals()" class="col-span-3 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold jumlah-qty" required>
-            
             <select class="col-span-3 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold satuan">
                 <option value="Kg">Kg</option>
                 <option value="Pcs">Pcs</option>
             </select>
-            
             <input type="number" placeholder="Harga" oninput="updateFormTotals()" class="col-span-4 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-red-950 harga-satuan" required>
-            
             <button type="button" onclick="removeItemRow(this)" class="col-span-2 bg-gray-200 hover:bg-red-100 text-red-600 p-2 rounded-lg text-xs font-bold transition">
                 <i class="fa-solid fa-trash"></i>
             </button>
@@ -491,28 +485,27 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
         items: items
     };
 
-    const res = awaitfetch('/api/surat-jalan', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(dataFormSuratJalan) // ganti dengan variabel object data Anda
-})
-.then(response => {
-  if (!response.ok) {
-    throw new Error('Gagal menyimpan data');
-  }
-  return response.json();
-})
+    try {
+        const res = await fetch('/api/surat-jalan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
 
-    if (res.ok) {
-        alert('Surat jalan berhasil disimpan!');
-        document.getElementById('formSuratJalan').reset();
-        document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
-        initCustomerDropdown();
-        resetItemContainer();
-        loadTableData();
-    } else {
-        alert('Gagal menyimpan data.');
+        if (res.ok) {
+            alert('Surat jalan berhasil disimpan!');
+            document.getElementById('formSuratJalan').reset();
+            document.getElementById('tanggal').value = new Date().toISOString().split('T')[0];
+            initCustomerDropdown();
+            resetItemContainer();
+            loadTableData();
+        } else {
+            alert('Gagal menyimpan data.');
+        }
+    } catch (err) {
+        console.error('Error saat menyimpan:', err);
+        alert('Terjadi kesalahan koneksi server.');
     }
 });

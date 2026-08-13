@@ -1,36 +1,39 @@
 const express = require('express');
 const app = express();
 
-// WAJIB: Agar server bisa membaca data dari form frontend
+// WAJIB: Agar server bisa membaca JSON dari frontend
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Memori sementara untuk menyimpan data surat jalan
 let databaseSuratJalan = [];
 
-// Endpoint untuk mengambil semua data surat jalan
+// Endpoint GET: Mengambil data surat jalan sesuai divisi
 app.get('/api/surat-jalan', (req, res) => {
+  const { divisi } = req.query;
+  if (divisi) {
+    const filteredData = databaseSuratJalan.filter(item => item.divisi === divisi);
+    return res.status(200).json(filteredData);
+  }
   res.status(200).json(databaseSuratJalan);
 });
 
-// Endpoint untuk menyimpan data surat jalan baru
+// Endpoint POST: Menyimpan data surat jalan baru
 app.post('/api/surat-jalan', (req, res) => {
   try {
     const dataBaru = req.body;
     
-    // Validasi data
-    if (!dataBaru) {
-      return res.status(400).json({ success: false, message: 'Data tidak boleh kosong' });
+    if (!dataBaru || !dataBaru.no_surat) {
+      return res.status(400).json({ success: false, message: 'Data tidak valid atau kosong' });
     }
 
-   // Tambahkan data ke array
-    dataSuratJalan.push(inputData);
+    // Masukkan data ke array
+    databaseSuratJalan.push(dataBaru);
 
-    // Kirim respons sukses
-   return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Data berhasil disimpan",
-      data: inputData
+      data: dataBaru
     });
   } catch (err) {
     return res.status(500).json({
@@ -40,7 +43,7 @@ app.post('/api/surat-jalan', (req, res) => {
   }
 });
 
-// Jalankan server jika di lingkungan lokal
+// Jalankan server jika lokal
 const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
@@ -48,5 +51,5 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Export app agar dibaca oleh Vercel
+// Export untuk Vercel
 module.exports = app;
