@@ -310,7 +310,7 @@ function addItemRow() {
     updatePartDropdown(div);
 }
 
-// 7. Menghapus Baris Item
+// 7. Menghapus Baris Item Form Input
 function removeItemRow(btn) {
     const rows = document.querySelectorAll('.item-row');
     if (rows.length > 1) {
@@ -403,7 +403,7 @@ async function loadTableData() {
         if (data.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="p-8 text-center text-gray-400">
+                    <td colspan="7" class="p-8 text-center text-gray-400">
                         <i class="fa-solid fa-folder-open text-3xl mb-2 text-red-200 block"></i>
                         Belum ada data surat jalan terdaftar
                     </td>
@@ -425,6 +425,11 @@ async function loadTableData() {
                     <td class="p-3 text-gray-800 font-semibold align-top">${namaBarangList}</td>
                     <td class="p-3 text-gray-600 align-top">${spesifikasiList}</td>
                     <td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>
+                    <td class="p-3 text-center align-top">
+                        <button onclick="deleteSuratJalan('${encodeURIComponent(item.no_surat)}')" class="bg-red-100 hover:bg-red-600 text-red-600 hover:text-white p-2 rounded-lg transition duration-200" title="Hapus Surat Jalan">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
         });
@@ -433,7 +438,33 @@ async function loadTableData() {
     }
 }
 
-// 12. Filter Pencarian Tabel
+// 12. Fungsi Hapus Data Surat Jalan dari Riwayat
+async function deleteSuratJalan(noSurat) {
+    const decodedNoSurat = decodeURIComponent(noSurat);
+    if (!confirm(`Apakah Anda yakin ingin menghapus surat jalan: ${decodedNoSurat}?`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/surat-jalan/${noSurat}`, {
+            method: 'DELETE'
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(data.message || 'Data berhasil dihapus!');
+            loadTableData();
+        } else {
+            alert(data.message || 'Gagal menghapus data.');
+        }
+    } catch (err) {
+        console.error("Error saat menghapus data:", err);
+        alert('Terjadi kesalahan koneksi ke server.');
+    }
+}
+
+// 13. Filter Pencarian Tabel
 function filterTable() {
     const query = document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('.search-row');
@@ -443,7 +474,7 @@ function filterTable() {
     });
 }
 
-// 13. Ekspor Laporan
+// 14. Ekspor Laporan
 function exportExcel() {
     const divisi = document.getElementById('divisiAktif').value;
     window.open(`/api/export/excel?divisi=${divisi}`, '_blank');
@@ -459,7 +490,7 @@ function exportRekapBulanan() {
     }
 }
 
-// 14. Event Listener Submit Form
+// 15. Event Listener Submit Form
 document.getElementById('formSuratJalan').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -502,7 +533,8 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
             resetItemContainer();
             loadTableData();
         } else {
-            alert('Gagal menyimpan data.');
+            const errData = await res.json();
+            alert(errData.message || 'Gagal menyimpan data.');
         }
     } catch (err) {
         console.error('Error saat menyimpan:', err);

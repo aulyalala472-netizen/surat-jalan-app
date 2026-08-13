@@ -71,12 +71,12 @@
                         </div>
                     </div>
 
-                   <!-- INPUT / DROPDOWN CUSTOMER -->
-<div>
-    <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Customer / Vendor</label>
-    <input type="text" id="customer" list="customerList" oninput="onCustomerChange()" placeholder="Pilih atau ketik Customer..." required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:ring-2 focus:ring-red-500 outline-none">
-    <datalist id="customerList"></datalist>
-</div>
+                    <!-- INPUT / DROPDOWN CUSTOMER -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Customer / Vendor</label>
+                        <input type="text" id="customer" list="customerList" oninput="onCustomerChange()" placeholder="Pilih atau ketik Customer..." required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:ring-2 focus:ring-red-500 outline-none">
+                        <datalist id="customerList"></datalist>
+                    </div>
 
                     <!-- DETAIL BARANG & HARGA -->
                     <div class="border-t border-red-100 pt-4 mt-2">
@@ -138,7 +138,8 @@
                                 <th class="p-2.5 bg-red-100/70">Customer</th>
                                 <th class="p-2.5 bg-red-100/70">Nama Barang</th>
                                 <th class="p-2.5 bg-red-100/70">Spesifikasi</th>
-                                <th class="p-2.5 bg-red-100/70 text-right rounded-r-xl">Total Harga</th>
+                                <th class="p-2.5 bg-red-100/70 text-right">Total Harga</th>
+                                <th class="p-2.5 bg-red-100/70 text-center rounded-r-xl">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y-0">
