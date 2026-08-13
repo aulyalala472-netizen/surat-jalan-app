@@ -610,7 +610,7 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
     const items = [];
 
     itemRows.forEach(row => {
-        const hargaInput = row.querySelector('.harga-satuan');
+        const hargaInput = row.querySelector('.Qty');
         items.push({
             nama_barang: row.querySelector('.nama-barang').value,
             spesifikasi: row.querySelector('.spesifikasi').value,
