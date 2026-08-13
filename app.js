@@ -268,7 +268,7 @@ function onSpekChange(inputElem) {
     if (cust && selectedPart && selectedSpek && MASTER_DATA[cust]) {
         const found = MASTER_DATA[cust].find(i => i.part === selectedPart && i.spek === selectedSpek);
         if (found) {
-            hargaInput.value = found.harga;
+            if (hargaInput) hargaInput.value = found.harga;
             satuanSelect.value = (found.unit.toUpperCase() === 'PCS') ? 'Pcs' : 'Kg';
         }
     }
@@ -280,6 +280,9 @@ function onSpekChange(inputElem) {
 function addItemRow() {
     const container = document.getElementById('itemContainer');
     const rowId = Date.now();
+    const divisi = document.getElementById('divisiAktif').value;
+    const isPPIC = divisi === 'PPIC';
+
     const div = document.createElement('div');
     div.className = 'item-row bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2 relative';
     
@@ -295,12 +298,12 @@ function addItemRow() {
             </div>
         </div>
         <div class="grid grid-cols-12 gap-2 items-center">
-            <input type="number" step="0.01" placeholder="Qty / Berat" oninput="updateFormTotals()" class="col-span-3 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold jumlah-qty" required>
-            <select class="col-span-3 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold satuan">
+            <input type="number" step="0.01" placeholder="Qty / Berat" oninput="updateFormTotals()" class="${isPPIC ? 'col-span-7' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold jumlah-qty" required>
+            <select class="${isPPIC ? 'col-span-3' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold satuan">
                 <option value="Kg">Kg</option>
                 <option value="Pcs">Pcs</option>
             </select>
-            <input type="number" placeholder="Harga" oninput="updateFormTotals()" class="col-span-4 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-red-950 harga-satuan" required>
+            ${!isPPIC ? `<input type="number" placeholder="Harga" oninput="updateFormTotals()" class="col-span-4 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-red-950 harga-satuan" required>` : ''}
             <button type="button" onclick="removeItemRow(this)" class="col-span-2 bg-gray-200 hover:bg-red-100 text-red-600 p-2 rounded-lg text-xs font-bold transition">
                 <i class="fa-solid fa-trash"></i>
             </button>
@@ -327,11 +330,15 @@ function updateFormTotals() {
 
     document.querySelectorAll('.item-row').forEach(row => {
         const qty = parseFloat(row.querySelector('.jumlah-qty').value) || 0;
-        const harga = parseFloat(row.querySelector('.harga-satuan').value) || 0;
+        const hargaElem = row.querySelector('.harga-satuan');
+        const harga = hargaElem ? (parseFloat(hargaElem.value) || 0) : 0;
         grandTotal += (qty * harga);
     });
 
-    document.getElementById('formGrandTotal').innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
+    const totalElem = document.getElementById('formGrandTotal');
+    if (totalElem) {
+        totalElem.innerText = 'Rp ' + grandTotal.toLocaleString('id-ID');
+    }
 }
 
 // 9. Reset Kontainer Baris
@@ -351,6 +358,9 @@ function switchTab(divisi) {
     const badgeDivisi = document.getElementById('badgeDivisi');
     const btnSubmit = document.getElementById('btnSubmit');
     const tableTitle = document.getElementById('tableTitle');
+    const formTotalContainer = document.getElementById('formTotalContainer');
+    const thHarga = document.getElementById('thHarga');
+    const formLabelBarang = document.getElementById('formLabelBarang');
 
     document.getElementById('divisiAktif').value = divisi;
 
@@ -368,6 +378,10 @@ function switchTab(divisi) {
         tableTitle.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-red-600"></i> Riwayat Surat Jalan Masuk';
 
         document.getElementById('no_surat').placeholder = "SJ-IN/2026/001";
+
+        if (formTotalContainer) formTotalContainer.style.display = 'none';
+        if (thHarga) thHarga.style.display = 'none';
+        if (formLabelBarang) formLabelBarang.innerHTML = '<i class="fa-solid fa-boxes-stacked mr-1 text-red-600"></i> Detail Barang';
     } else {
         document.getElementById('tipeAktif').value = 'KELUAR';
         tabMarketing.className = "px-5 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 bg-white text-red-900 shadow-md";
@@ -382,6 +396,10 @@ function switchTab(divisi) {
         tableTitle.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-red-700"></i> Riwayat Surat Jalan Keluar';
 
         document.getElementById('no_surat').placeholder = "SJ-OUT/2026/001";
+
+        if (formTotalContainer) formTotalContainer.style.display = 'flex';
+        if (thHarga) thHarga.style.display = 'table-cell';
+        if (formLabelBarang) formLabelBarang.innerHTML = '<i class="fa-solid fa-boxes-stacked mr-1 text-red-600"></i> Detail Barang & Harga';
     }
 
     resetItemContainer();
@@ -403,7 +421,7 @@ async function loadTableData() {
         if (data.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="p-8 text-center text-gray-400">
+                    <td colspan="${divisi === 'PPIC' ? '7' : '8'}" class="p-8 text-center text-gray-400">
                         <i class="fa-solid fa-folder-open text-3xl mb-2 text-red-200 block"></i>
                         Belum ada data surat jalan terdaftar
                     </td>
@@ -414,13 +432,8 @@ async function loadTableData() {
         data.forEach(item => {
             const totalHargaSJ = item.items ? item.items.reduce((acc, curr) => acc + ((parseFloat(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0) : 0;
             
-            // PERUBAHAN DI SINI:
-            // 1. Nama Barang hanya menampilkan nama barangnya saja
             const namaBarangList = item.items ? item.items.map(i => i.nama_barang || '-').join('<br>') : '-';
-            
-            // 2. Satuan kini menampilkan Angka Qty + Satuan (contoh: 10 Kg atau 500 Pcs)
             const satuanList = item.items ? item.items.map(i => `${i.qty || 0} ${i.satuan || ''}`).join('<br>') : '-';
-            
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
 
             tbody.innerHTML += `
@@ -431,7 +444,7 @@ async function loadTableData() {
                     <td class="p-3 text-gray-800 font-semibold align-top">${namaBarangList}</td>
                     <td class="p-3 text-gray-700 font-bold align-top">${satuanList}</td>
                     <td class="p-3 text-gray-600 align-top">${spesifikasiList}</td>
-                    <td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>
+                    ${divisi !== 'PPIC' ? `<td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>` : ''}
                     <td class="p-3 text-center align-top">
                         <button onclick="deleteSuratJalan('${encodeURIComponent(item.no_surat)}')" class="bg-red-100 hover:bg-red-600 text-red-600 hover:text-white p-2 rounded-lg transition duration-200" title="Hapus Surat Jalan">
                             <i class="fa-solid fa-trash-can"></i>
@@ -505,12 +518,13 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
     const items = [];
 
     itemRows.forEach(row => {
+        const hargaInput = row.querySelector('.harga-satuan');
         items.push({
             nama_barang: row.querySelector('.nama-barang').value,
             spesifikasi: row.querySelector('.spesifikasi').value,
             qty: parseFloat(row.querySelector('.jumlah-qty').value) || 0,
             satuan: row.querySelector('.satuan').value,
-            harga: parseFloat(row.querySelector('.harga-satuan').value) || 0
+            harga: hargaInput ? (parseFloat(hargaInput.value) || 0) : 0
         });
     });
 
