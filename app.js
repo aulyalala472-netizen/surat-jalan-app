@@ -403,7 +403,7 @@ async function loadTableData() {
         if (data.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="p-8 text-center text-gray-400">
+                    <td colspan="8" class="p-8 text-center text-gray-400">
                         <i class="fa-solid fa-folder-open text-3xl mb-2 text-red-200 block"></i>
                         Belum ada data surat jalan terdaftar
                     </td>
@@ -414,7 +414,8 @@ async function loadTableData() {
         data.forEach(item => {
             const totalHargaSJ = item.items ? item.items.reduce((acc, curr) => acc + ((parseFloat(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0) : 0;
             
-            const namaBarangList = item.items ? item.items.map(i => `${i.nama_barang} (${i.qty} ${i.satuan})`).join('<br>') : '-';
+            const namaBarangList = item.items ? item.items.map(i => `${i.nama_barang} (${i.qty})`).join('<br>') : '-';
+            const satuanList = item.items ? item.items.map(i => i.satuan || '-').join('<br>') : '-';
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
 
             tbody.innerHTML += `
@@ -423,6 +424,7 @@ async function loadTableData() {
                     <td class="p-3 text-gray-600 align-top">${item.tanggal || '-'}</td>
                     <td class="p-3 font-medium text-gray-800 align-top">${item.customer || item.mitra || '-'}</td>
                     <td class="p-3 text-gray-800 font-semibold align-top">${namaBarangList}</td>
+                    <td class="p-3 text-gray-700 font-bold align-top">${satuanList}</td>
                     <td class="p-3 text-gray-600 align-top">${spesifikasiList}</td>
                     <td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>
                     <td class="p-3 text-center align-top">
