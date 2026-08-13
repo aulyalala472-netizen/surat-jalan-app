@@ -356,4 +356,12 @@ app.get('/api/export/rekap-bulanan', async (req, res) => {
     }
 });
 
+// Tambahkan fallback listen untuk lokal development
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server berjalan di port ${PORT}`);
+    });
+}
+
+// Export aplikasi Express untuk Vercel Serverless Function
 module.exports = app;

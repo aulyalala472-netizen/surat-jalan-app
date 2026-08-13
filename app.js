@@ -602,7 +602,7 @@ function exportRekapBulanan() {
     }
 }
 
-// 15. Event Listener Submit Form (REVISI: Menangani POST Baru / PUT Update)
+// 15. Event Listener Submit Form (REVISI PERBAIKAN BUG SERVER ERROR)
 document.getElementById('formSuratJalan').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -610,16 +610,17 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
     const items = [];
 
     itemRows.forEach(row => {
-        const hargaInput = row.querySelector('.Qty');
+        // REVISI: Mengubah '.Qty' menjadi '.harga-satuan' agar tidak error/null
+        const hargaElem = row.querySelector('.harga-satuan');
+        
         items.push({
-            nama_barang: row.querySelector('.nama-barang').value,
-            spesifikasi: row.querySelector('.spesifikasi').value,
-            qty: parseFloat(row.querySelector('.jumlah-qty').value) || 0,
-            satuan: row.querySelector('.satuan').value,
-            harga: hargaInput ? (parseFloat(hargaInput.value) || 0) : 0
+            nama_barang: row.querySelector('.nama-barang')?.value || '',
+            spesifikasi: row.querySelector('.spesifikasi')?.value || '',
+            qty: parseFloat(row.querySelector('.jumlah-qty')?.value) || 0,
+            satuan: row.querySelector('.satuan')?.value || 'Kg',
+            harga: hargaElem ? (parseFloat(hargaElem.value) || 0) : 0
         });
     });
-
     const payload = {
         divisi: document.getElementById('divisiAktif').value,
         tipe: document.getElementById('tipeAktif').value,
@@ -642,6 +643,8 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
             body: JSON.stringify(payload)
         });
 
+        const resData = await res.json();
+
         if (res.ok) {
             alert(isEdit ? 'Surat jalan berhasil diperbarui!' : 'Surat jalan berhasil disimpan!');
             document.getElementById('formSuratJalan').reset();
@@ -651,8 +654,7 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
             resetItemContainer();
             loadTableData();
         } else {
-            const errData = await res.json();
-            alert(errData.message || 'Gagal menyimpan data.');
+            alert(resData.message || 'Gagal menyimpan data.');
         }
     } catch (err) {
         console.error('Error saat menyimpan:', err);

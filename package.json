@@ -2,12 +2,13 @@
   "name": "surat-jalan-megumi",
   "version": "1.0.0",
   "description": "Sistem Surat Jalan PPIC & Marketing PT Megumi Brayan Indonesia",
-  "main": "api/index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node api/index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "exceljs": "^4.3.0",
     "express": "^4.19.2"
   }
 }
