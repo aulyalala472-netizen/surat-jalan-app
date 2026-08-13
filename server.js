@@ -356,7 +356,4 @@ app.get('/api/export/rekap-bulanan', async (req, res) => {
     }
 });
 
-// Jalankan Server
-app.listen(PORT, () => {
-  console.log(`Server berjalan di port ${PORT}`);
-});
+module.exports = app;
