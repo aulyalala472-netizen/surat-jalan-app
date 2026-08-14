@@ -423,7 +423,7 @@ function switchTab(divisi) {
     loadTableData();
 }
 
-// 11. Muat Data Tabel dari Server
+// 11. Muat Data Tabel dari Server (REVISI: Pemisahan Qty Pcs & Qty Kg)
 async function loadTableData() {
     try {
         const divisi = document.getElementById('divisiAktif').value;
@@ -438,7 +438,7 @@ async function loadTableData() {
         if (data.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="${divisi === 'PPIC' ? '7' : '8'}" class="p-8 text-center text-gray-400">
+                    <td colspan="${divisi === 'PPIC' ? '8' : '9'}" class="p-8 text-center text-gray-400">
                         <i class="fa-solid fa-folder-open text-3xl mb-2 text-red-200 block"></i>
                         Belum ada data surat jalan terdaftar
                     </td>
@@ -450,17 +450,27 @@ async function loadTableData() {
             const totalHargaSJ = item.items ? item.items.reduce((acc, curr) => acc + ((parseFloat(curr.qty) || 0) * (parseFloat(curr.harga) || 0)), 0) : 0;
             
             const namaBarangList = item.items ? item.items.map(i => i.nama_barang || '-').join('<br>') : '-';
-            const satuanList = item.items ? item.items.map(i => `${i.qty || 0} ${i.satuan || ''}`).join('<br>') : '-';
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
 
-            // REVISI: Penambahan Tombol Edit Berbentuk Pensil di Kolom Aksi
+            // Memisahkan penayangan angka Qty ke kolom Qty Pcs & Qty Kg
+            const qtyPcsList = item.items ? item.items.map(i => {
+                const isPcs = (i.satuan || '').toLowerCase() === 'pcs';
+                return isPcs ? `${i.qty || 0} Pcs` : '-';
+            }).join('<br>') : '-';
+
+            const qtyKgList = item.items ? item.items.map(i => {
+                const isKg = (i.satuan || '').toLowerCase() === 'kg';
+                return isKg ? `${i.qty || 0} Kg` : '-';
+            }).join('<br>') : '-';
+
             tbody.innerHTML += `
                 <tr class="bg-white hover:bg-red-50/50 transition-colors border-b border-gray-100 search-row">
                     <td class="p-3 font-bold text-red-950 align-top">${item.no_surat || '-'}</td>
                     <td class="p-3 text-gray-600 align-top">${item.tanggal || '-'}</td>
                     <td class="p-3 font-medium text-gray-800 align-top">${item.customer || item.mitra || '-'}</td>
                     <td class="p-3 text-gray-800 font-semibold align-top">${namaBarangList}</td>
-                    <td class="p-3 text-gray-700 font-bold align-top">${satuanList}</td>
+                    <td class="p-3 text-gray-700 font-bold text-center align-top">${qtyPcsList}</td>
+                    <td class="p-3 text-gray-700 font-bold text-center align-top">${qtyKgList}</td>
                     <td class="p-3 text-gray-600 align-top">${spesifikasiList}</td>
                     ${divisi !== 'PPIC' ? `<td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>` : ''}
                     <td class="p-3 text-center align-top">
@@ -481,7 +491,7 @@ async function loadTableData() {
     }
 }
 
-// REVISI: Fungsi Baru untuk Memuat Data ke Form dalam Mode Edit
+// REVISI: Fungsi Memuat Data ke Form dalam Mode Edit
 async function editSuratJalan(noSurat) {
     const decodedNoSurat = decodeURIComponent(noSurat);
     const divisi = document.getElementById('divisiAktif').value;
@@ -610,7 +620,6 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
     const items = [];
 
     itemRows.forEach(row => {
-        // REVISI: Mengubah '.Qty' menjadi '.harga-satuan' agar tidak error/null
         const hargaElem = row.querySelector('.harga-satuan');
         
         items.push({
@@ -621,6 +630,7 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
             harga: hargaElem ? (parseFloat(hargaElem.value) || 0) : 0
         });
     });
+
     const payload = {
         divisi: document.getElementById('divisiAktif').value,
         tipe: document.getElementById('tipeAktif').value,
