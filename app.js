@@ -423,7 +423,7 @@ function switchTab(divisi) {
     loadTableData();
 }
 
-// 11. Muat Data Tabel dari Server (REVISI: Pemisahan Qty Pcs & Qty Kg)
+// 11. Muat Data Tabel dari Server (Posisi Tanggal & No Surat ditukar)
 async function loadTableData() {
     try {
         const divisi = document.getElementById('divisiAktif').value;
@@ -465,8 +465,8 @@ async function loadTableData() {
 
             tbody.innerHTML += `
                 <tr class="bg-white hover:bg-red-50/50 transition-colors border-b border-gray-100 search-row">
-                    <td class="p-3 font-bold text-red-950 align-top">${item.no_surat || '-'}</td>
                     <td class="p-3 text-gray-600 align-top">${item.tanggal || '-'}</td>
+                    <td class="p-3 font-bold text-red-950 align-top">${item.no_surat || '-'}</td>
                     <td class="p-3 font-medium text-gray-800 align-top">${item.customer || item.mitra || '-'}</td>
                     <td class="p-3 text-gray-800 font-semibold align-top">${namaBarangList}</td>
                     <td class="p-3 text-gray-700 font-bold text-center align-top">${qtyPcsList}</td>
@@ -491,7 +491,7 @@ async function loadTableData() {
     }
 }
 
-// REVISI: Fungsi Memuat Data ke Form dalam Mode Edit
+// Fungsi Memuat Data ke Form dalam Mode Edit
 async function editSuratJalan(noSurat) {
     const decodedNoSurat = decodeURIComponent(noSurat);
     const divisi = document.getElementById('divisiAktif').value;
@@ -612,7 +612,7 @@ function exportRekapBulanan() {
     }
 }
 
-// 15. Event Listener Submit Form (REVISI PERBAIKAN BUG SERVER ERROR)
+// 15. Event Listener Submit Form
 document.getElementById('formSuratJalan').addEventListener('submit', async (e) => {
     e.preventDefault();
 
