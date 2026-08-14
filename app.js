@@ -428,14 +428,16 @@ async function loadTableData() {
     try {
         const divisi = document.getElementById('divisiAktif').value;
         const res = await fetch(`/api/surat-jalan?divisi=${divisi}`);
-        const data = await res.json();
+        
+        if (!res.ok) throw new Error('Gagal mengambil data dari server');
 
+        const data = await res.json();
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
 
         document.getElementById('totalBadge').innerText = `${data.length} Dokumen`;
 
-        if (data.length === 0) {
+        if (!Array.isArray(data) || data.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="${divisi === 'PPIC' ? '8' : '9'}" class="p-8 text-center text-gray-400">
@@ -452,7 +454,6 @@ async function loadTableData() {
             const namaBarangList = item.items ? item.items.map(i => i.nama_barang || '-').join('<br>') : '-';
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
 
-            // Memisahkan penayangan angka Qty ke kolom Qty Pcs & Qty Kg
             const qtyPcsList = item.items ? item.items.map(i => {
                 const isPcs = (i.satuan || '').toLowerCase() === 'pcs';
                 return isPcs ? `${i.qty || 0} Pcs` : '-';
