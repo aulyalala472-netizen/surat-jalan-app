@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const ExcelJS = require('exceljs'); // Menggunakan library exceljs yang sudah ada di package.json
+const fs = require('fs'); // Module bawaan untuk membaca & menulis file
+const ExcelJS = require('exceljs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,30 +11,55 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-Memory Database (Contoh Simpanan Data Temporary)
-let databaseSuratJalan = [];
+// Lokasi penyimpanan file database JSON lokal
+const DATA_FILE = path.join(__dirname, 'database.json');
 
-// Helper untuk membersihkan nama Customer agar valid sebagai Nama Sheet Excel (Maks 31 Karakter, Tanpa Karakter Khusus)
-function sanitizeSheetName(name) {
-    if (!name) return "CUSTOMER";
-    let clean = name.replace(/[:\\/?*\[\]]/g, '').trim();
-    if (clean.length > 30) {
-        clean = clean.substring(0, 30);
+// Helper: Membaca data dari file JSON
+function loadDatabase() {
+  try {
+    if (!fs.existsSync(DATA_FILE)) {
+      // Jika file belum ada, buat file baru dengan array kosong
+      fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2), 'utf-8');
+      return [];
     }
-    return clean || "CUSTOMER";
+    const rawData = fs.readFileSync(DATA_FILE, 'utf-8');
+    return JSON.parse(rawData || '[]');
+  } catch (err) {
+    console.error("Gagal membaca database.json:", err);
+    return [];
+  }
+}
+
+// Helper: Menyimpan data ke file JSON
+function saveDatabase(data) {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error("Gagal menyimpan ke database.json:", err);
+  }
+}
+
+// Helper untuk membersihkan nama Customer agar valid sebagai Nama Sheet Excel
+function sanitizeSheetName(name) {
+  if (!name) return "CUSTOMER";
+  let clean = name.replace(/[:\\/?*\[\]]/g, '').trim();
+  if (clean.length > 30) {
+    clean = clean.substring(0, 30);
+  }
+  return clean || "CUSTOMER";
 }
 
 // API 1: GET ALL SURAT JALAN (BERDASARKAN DIVISI)
 app.get('/api/surat-jalan', (req, res) => {
   try {
-    const { divisi } = req.query; // 'PPIC' atau 'MARKETING'
-    let result = databaseSuratJalan;
+    const { divisi } = req.query;
+    let databaseSuratJalan = loadDatabase(); // Baca data terbaru dari file
     
     if (divisi) {
-      result = databaseSuratJalan.filter(item => item.divisi === divisi);
+      databaseSuratJalan = databaseSuratJalan.filter(item => item.divisi === divisi);
     }
     
-    return res.status(200).json(result);
+    return res.status(200).json(databaseSuratJalan);
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -48,6 +74,8 @@ app.post('/api/surat-jalan', (req, res) => {
       return res.status(400).json({ success: false, message: 'Nomor surat jalan wajib diisi!' });
     }
 
+    let databaseSuratJalan = loadDatabase();
+
     // Cek duplikasi nomor surat jalan
     const ada = databaseSuratJalan.some(item => item.no_surat === dataBaru.no_surat);
     if (ada) {
@@ -55,6 +83,7 @@ app.post('/api/surat-jalan', (req, res) => {
     }
 
     databaseSuratJalan.push(dataBaru);
+    saveDatabase(databaseSuratJalan); // Simpan perubahan secara permanen
 
     return res.status(201).json({
       success: true,
@@ -73,6 +102,7 @@ app.put('/api/surat-jalan/:no_surat', (req, res) => {
     const decodedNoSurat = decodeURIComponent(no_surat);
     const dataUpdate = req.body;
 
+    let databaseSuratJalan = loadDatabase();
     const index = databaseSuratJalan.findIndex(item => item.no_surat === decodedNoSurat);
 
     if (index === -1) {
@@ -91,6 +121,8 @@ app.put('/api/surat-jalan/:no_surat', (req, res) => {
       ...dataUpdate
     };
 
+    saveDatabase(databaseSuratJalan); // Simpan perubahan secara permanen
+
     return res.status(200).json({
       success: true,
       message: 'Data surat jalan berhasil diperbarui!',
@@ -107,6 +139,7 @@ app.delete('/api/surat-jalan/:no_surat', (req, res) => {
     const { no_surat } = req.params;
     const decodedNoSurat = decodeURIComponent(no_surat);
 
+    let databaseSuratJalan = loadDatabase();
     const index = databaseSuratJalan.findIndex(item => item.no_surat === decodedNoSurat);
 
     if (index === -1) {
@@ -114,6 +147,7 @@ app.delete('/api/surat-jalan/:no_surat', (req, res) => {
     }
 
     databaseSuratJalan.splice(index, 1);
+    saveDatabase(databaseSuratJalan); // Simpan perubahan secara permanen
 
     return res.status(200).json({
       success: true,
@@ -125,12 +159,11 @@ app.delete('/api/surat-jalan/:no_surat', (req, res) => {
 });
 
 // =========================================================================
-// FITUR TAMBAHAN: EKSPOR EXCEL SESUAI FORMAT SURAT JALAN PADA GAMBAR
+// EKSPOR EXCEL
 // =========================================================================
 async function generateExcelSuratJalan(dataFiltered, res) {
     const workbook = new ExcelJS.Workbook();
 
-    // Grouping Data: Per Customer -> Per Tanggal
     const customerGroup = {};
     dataFiltered.forEach(sj => {
         const custName = sj.customer || sj.mitra || "TANPA CUSTOMER";
@@ -146,7 +179,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
 
     const usedSheetNames = new Set();
 
-    // Loop Setiap Customer (Membuat Sheet Baru)
     for (const [custName, tanggalMap] of Object.entries(customerGroup)) {
         let baseSheetName = sanitizeSheetName(custName);
         let sheetName = baseSheetName;
@@ -160,21 +192,18 @@ async function generateExcelSuratJalan(dataFiltered, res) {
 
         const ws = workbook.addWorksheet(sheetName);
 
-        // Pengaturan Lebar Kolom
         ws.columns = [
-            { key: 'colA', width: 6 },   // No
-            { key: 'colB', width: 35 },  // Nama Barang
-            { key: 'colC', width: 15 },  // Jumlah
-            { key: 'colD', width: 25 },  // Keterangan / Spek
-            { key: 'colE', width: 18 }   // Harga / Info Tambahan
+            { key: 'colA', width: 6 },
+            { key: 'colB', width: 35 },
+            { key: 'colC', width: 15 },
+            { key: 'colD', width: 25 },
+            { key: 'colE', width: 18 }
         ];
 
         let currentRow = 1;
 
-        // Loop Per Tanggal untuk Customer Ini
         for (const [tanggal, listSJ] of Object.entries(tanggalMap)) {
             for (const sj of listSJ) {
-                // 1. KOP PERUSAHAAN (Sesuai Gambar)
                 ws.mergeCells(`A${currentRow}:D${currentRow}`);
                 const r1 = ws.getCell(`A${currentRow}`);
                 r1.value = "PT. MEGUMI BRAYAN INDONESIA";
@@ -188,7 +217,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
                 ws.getCell(`A${currentRow+2}`).value = "e-mail : mktmegumibrayan@gmail.com | Telp : +62 878-9631-2028";
                 ws.getCell(`A${currentRow+2}`).font = { name: 'Arial', size: 9 };
 
-                // Judul Dokumen & No Surat Jalan
                 ws.mergeCells(`B${currentRow+3}:C${currentRow+3}`);
                 const rTitle = ws.getCell(`B${currentRow+3}`);
                 rTitle.value = "SURAT JALAN";
@@ -203,7 +231,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
 
                 currentRow += 6;
 
-                // 2. HEADER KEPADA YTH & TANGGAL
                 ws.getCell(`A${currentRow}`).value = "Kepada Yth.";
                 ws.getCell(`B${currentRow}`).value = `: ${custName}`;
                 ws.getCell(`B${currentRow}`).font = { bold: true };
@@ -217,7 +244,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
 
                 currentRow += 4;
 
-                // 3. TABEL HEADER BARANG
                 const headerRow = ws.getRow(currentRow);
                 headerRow.values = ["No", "Nama Barang", "Jumlah", "Keterangan / Spesifikasi"];
                 if (sj.divisi === 'MARKETING') {
@@ -236,7 +262,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
 
                 currentRow++;
 
-                // 4. ISI BARANG SURAT JALAN
                 let grandTotal = 0;
                 if (sj.items && sj.items.length > 0) {
                     sj.items.forEach((item, idx) => {
@@ -290,7 +315,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
                 currentRow += 1;
                 ws.getCell(`A${currentRow}`).value = "Mohon diperiksa kondisi barang dan diterima.";
 
-                // 5. TANDA TANGAN (Sesuai Gambar)
                 currentRow += 2;
                 ws.getCell(`A${currentRow}`).value = "Yang Menerima,";
                 ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
@@ -309,7 +333,6 @@ async function generateExcelSuratJalan(dataFiltered, res) {
                 ws.getCell(`D${currentRow}`).font = { bold: true };
                 ws.getCell(`D${currentRow}`).alignment = { horizontal: 'center' };
 
-                // Pembatas antar surat jalan jika ada lebih dari 1 di tanggal yang sama
                 currentRow += 4;
             }
         }
@@ -326,9 +349,9 @@ async function generateExcelSuratJalan(dataFiltered, res) {
 app.get('/api/export/excel', async (req, res) => {
     try {
         const { divisi } = req.query;
-        let dataFiltered = databaseSuratJalan;
+        let dataFiltered = loadDatabase();
         if (divisi) {
-            dataFiltered = databaseSuratJalan.filter(item => item.divisi === divisi);
+            dataFiltered = dataFiltered.filter(item => item.divisi === divisi);
         }
         await generateExcelSuratJalan(dataFiltered, res);
     } catch (err) {
@@ -339,8 +362,8 @@ app.get('/api/export/excel', async (req, res) => {
 // API 6: EKSPOR REKAP BULANAN KE EXCEL
 app.get('/api/export/rekap-bulanan', async (req, res) => {
     try {
-        const { divisi, bulan } = req.query; // Format bulan: YYYY-MM
-        let dataFiltered = databaseSuratJalan;
+        const { divisi, bulan } = req.query;
+        let dataFiltered = loadDatabase();
 
         if (divisi) {
             dataFiltered = dataFiltered.filter(item => item.divisi === divisi);
@@ -356,12 +379,11 @@ app.get('/api/export/rekap-bulanan', async (req, res) => {
     }
 });
 
-// Tambahkan fallback listen untuk lokal development
+// Fallback listen untuk lokal development
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server berjalan di port ${PORT}`);
     });
 }
 
-// Export aplikasi Express untuk Vercel Serverless Function
 module.exports = app;
