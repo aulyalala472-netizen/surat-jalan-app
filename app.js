@@ -300,6 +300,9 @@ function addItemRow() {
                 <datalist id="spekList_${rowId}" class="spekList"></datalist>
             </div>
         </div>
+        <div>
+            <input type="text" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 keterangan" placeholder="Ketik Keterangan (Opsional)...">
+        </div>
         <div class="grid grid-cols-12 gap-2 items-center">
             <input type="number" step="0.01" placeholder="Qty / Berat" oninput="updateFormTotals()" class="${isPPIC ? 'col-span-7' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold jumlah-qty" required>
             <select class="${isPPIC ? 'col-span-3' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold satuan">
@@ -423,7 +426,7 @@ function switchTab(divisi) {
     loadTableData();
 }
 
-// 11. Muat Data Tabel dari Server (Posisi Tanggal & No Surat ditukar)
+// 11. Muat Data Tabel dari Server (Posisi Tanggal & No Surat ditukar + Kolom Keterangan Ditambahkan)
 async function loadTableData() {
     try {
         const divisi = document.getElementById('divisiAktif').value;
@@ -440,7 +443,7 @@ async function loadTableData() {
         if (!Array.isArray(data) || data.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="${divisi === 'PPIC' ? '8' : '9'}" class="p-8 text-center text-gray-400">
+                    <td colspan="${divisi === 'PPIC' ? '9' : '10'}" class="p-8 text-center text-gray-400">
                         <i class="fa-solid fa-folder-open text-3xl mb-2 text-red-200 block"></i>
                         Belum ada data surat jalan terdaftar
                     </td>
@@ -453,6 +456,7 @@ async function loadTableData() {
             
             const namaBarangList = item.items ? item.items.map(i => i.nama_barang || '-').join('<br>') : '-';
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
+            const keteranganList = item.items ? item.items.map(i => i.keterangan || '-').join('<br>') : '-';
 
             const qtyPcsList = item.items ? item.items.map(i => {
                 const isPcs = (i.satuan || '').toLowerCase() === 'pcs';
@@ -473,6 +477,7 @@ async function loadTableData() {
                     <td class="p-3 text-gray-700 font-bold text-center align-top">${qtyPcsList}</td>
                     <td class="p-3 text-gray-700 font-bold text-center align-top">${qtyKgList}</td>
                     <td class="p-3 text-gray-600 align-top">${spesifikasiList}</td>
+                    <td class="p-3 text-gray-600 align-top italic">${keteranganList}</td>
                     ${divisi !== 'PPIC' ? `<td class="p-3 text-right font-black text-red-900 align-top">Rp ${totalHargaSJ.toLocaleString('id-ID')}</td>` : ''}
                     <td class="p-3 text-center align-top">
                         <div class="flex items-center justify-center gap-1">
@@ -528,6 +533,9 @@ async function editSuratJalan(noSurat) {
 
                 lastRow.querySelector('.spesifikasi').value = item.spesifikasi || '';
                 onSpekChange(lastRow.querySelector('.spesifikasi'));
+
+                const ketElem = lastRow.querySelector('.keterangan');
+                if (ketElem) ketElem.value = item.keterangan || '';
 
                 lastRow.querySelector('.jumlah-qty').value = item.qty || 0;
                 lastRow.querySelector('.satuan').value = item.satuan || 'Kg';
@@ -626,6 +634,7 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
         items.push({
             nama_barang: row.querySelector('.nama-barang')?.value || '',
             spesifikasi: row.querySelector('.spesifikasi')?.value || '',
+            keterangan: row.querySelector('.keterangan')?.value || '',
             qty: parseFloat(row.querySelector('.jumlah-qty')?.value) || 0,
             satuan: row.querySelector('.satuan')?.value || 'Kg',
             harga: hargaElem ? (parseFloat(hargaElem.value) || 0) : 0

@@ -65,33 +65,34 @@ async function generateExcelBuffer(divisiFilter) {
         { key: 'colB', width: 35 },
         { key: 'colC', width: 15 },
         { key: 'colD', width: 25 },
-        { key: 'colE', width: 18 }
+        { key: 'colE', width: 25 },
+        { key: 'colF', width: 18 }
       ];
 
       let currentRow = 1;
 
       for (const [tanggal, listSJ] of Object.entries(tanggalMap)) {
         for (const sj of listSJ) {
-          ws.mergeCells(`A${currentRow}:D${currentRow}`);
+          ws.mergeCells(`A${currentRow}:E${currentRow}`);
           const r1 = ws.getCell(`A${currentRow}`);
           r1.value = "PT. MEGUMI BRAYAN INDONESIA";
           r1.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF990000' } };
 
-          ws.mergeCells(`A${currentRow+1}:D${currentRow+1}`);
+          ws.mergeCells(`A${currentRow+1}:E${currentRow+1}`);
           ws.getCell(`A${currentRow+1}`).value = "Jalan Sampora, Perum GMI D3/34, Bekasi";
           ws.getCell(`A${currentRow+1}`).font = { name: 'Arial', size: 9 };
 
-          ws.mergeCells(`A${currentRow+2}:D${currentRow+2}`);
+          ws.mergeCells(`A${currentRow+2}:E${currentRow+2}`);
           ws.getCell(`A${currentRow+2}`).value = "e-mail : mktmegumibrayan@gmail.com | Telp : +62 878-9631-2028";
           ws.getCell(`A${currentRow+2}`).font = { name: 'Arial', size: 9 };
 
-          ws.mergeCells(`B${currentRow+3}:C${currentRow+3}`);
+          ws.mergeCells(`B${currentRow+3}:D${currentRow+3}`);
           const rTitle = ws.getCell(`B${currentRow+3}`);
           rTitle.value = `SURAT JALAN (${sj.divisi || 'PPIC'})`;
           rTitle.font = { name: 'Arial', size: 12, bold: true, underline: true };
           rTitle.alignment = { horizontal: 'center' };
 
-          ws.mergeCells(`B${currentRow+4}:C${currentRow+4}`);
+          ws.mergeCells(`B${currentRow+4}:D${currentRow+4}`);
           const rNoSJ = ws.getCell(`B${currentRow+4}`);
           rNoSJ.value = `No. ${sj.no_surat || '-'}`;
           rNoSJ.font = { name: 'Arial', size: 10, bold: true };
@@ -103,9 +104,9 @@ async function generateExcelBuffer(divisiFilter) {
           ws.getCell(`B${currentRow}`).value = `: ${custName}`;
           ws.getCell(`B${currentRow}`).font = { bold: true };
 
-          ws.getCell(`C${currentRow}`).value = "Tanggal";
-          ws.getCell(`D${currentRow}`).value = `: ${tanggal}`;
-          ws.getCell(`D${currentRow}`).font = { bold: true };
+          ws.getCell(`D${currentRow}`).value = "Tanggal";
+          ws.getCell(`E${currentRow}`).value = `: ${tanggal}`;
+          ws.getCell(`E${currentRow}`).font = { bold: true };
 
           ws.getCell(`A${currentRow+1}`).value = "Dengan hormat,";
           ws.getCell(`A${currentRow+2}`).value = "Bersama surat ini kami mengirimkan barang dengan perincian sebagai berikut :";
@@ -113,9 +114,9 @@ async function generateExcelBuffer(divisiFilter) {
           currentRow += 4;
 
           const headerRow = ws.getRow(currentRow);
-          headerRow.values = ["No", "Nama Barang", "Jumlah", "Keterangan / Spesifikasi"];
+          headerRow.values = ["No", "Nama Barang", "Jumlah", "Spesifikasi", "Keterangan"];
           if (sj.divisi === 'MARKETING') {
-            headerRow.values = ["No", "Nama Barang", "Jumlah", "Keterangan", "Total Harga"];
+            headerRow.values = ["No", "Nama Barang", "Jumlah", "Spesifikasi", "Keterangan", "Total Harga"];
           }
 
           headerRow.eachCell((cell) => {
@@ -144,6 +145,7 @@ async function generateExcelBuffer(divisiFilter) {
                   item.nama_barang || '-',
                   qtyText,
                   item.spesifikasi || '-',
+                  item.keterangan || '-',
                   `Rp ${lineTotal.toLocaleString('id-ID')}`
                 ];
               } else {
@@ -151,7 +153,8 @@ async function generateExcelBuffer(divisiFilter) {
                   idx + 1,
                   item.nama_barang || '-',
                   qtyText,
-                  item.spesifikasi || '-'
+                  item.spesifikasi || '-',
+                  item.keterangan || '-'
                 ];
               }
 
@@ -167,16 +170,16 @@ async function generateExcelBuffer(divisiFilter) {
               currentRow++;
             });
           } else {
-            ws.getRow(currentRow).values = [1, "-", "-", "-"];
+            ws.getRow(currentRow).values = [1, "-", "-", "-", "-"];
             currentRow++;
           }
 
           if (sj.divisi === 'MARKETING') {
             const totalRow = ws.getRow(currentRow);
-            totalRow.values = ["", "Grand Total", "", "", `Rp ${grandTotal.toLocaleString('id-ID')}`];
-            ws.mergeCells(`B${currentRow}:D${currentRow}`);
+            totalRow.values = ["", "Grand Total", "", "", "", `Rp ${grandTotal.toLocaleString('id-ID')}`];
+            ws.mergeCells(`B${currentRow}:E${currentRow}`);
             totalRow.getCell(2).font = { bold: true };
-            totalRow.getCell(5).font = { bold: true };
+            totalRow.getCell(6).font = { bold: true };
             currentRow++;
           }
 
@@ -187,19 +190,19 @@ async function generateExcelBuffer(divisiFilter) {
           ws.getCell(`A${currentRow}`).value = "Yang Menerima,";
           ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
 
-          ws.getCell(`D${currentRow}`).value = `Bekasi, ${tanggal}`;
-          ws.getCell(`D${currentRow}`).alignment = { horizontal: 'center' };
+          ws.getCell(`E${currentRow}`).value = `Bekasi, ${tanggal}`;
+          ws.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
 
-          ws.getCell(`D${currentRow+1}`).value = "Hormat kami,";
-          ws.getCell(`D${currentRow+1}`).alignment = { horizontal: 'center' };
+          ws.getCell(`E${currentRow+1}`).value = "Hormat kami,";
+          ws.getCell(`E${currentRow+1}`).alignment = { horizontal: 'center' };
 
           currentRow += 4;
           ws.getCell(`A${currentRow}`).value = "( ............................ )";
           ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
 
-          ws.getCell(`D${currentRow}`).value = "PT. MEGUMI BRAYAN INDONESIA";
-          ws.getCell(`D${currentRow}`).font = { bold: true };
-          ws.getCell(`D${currentRow}`).alignment = { horizontal: 'center' };
+          ws.getCell(`E${currentRow}`).value = "PT. MEGUMI BRAYAN INDONESIA";
+          ws.getCell(`E${currentRow}`).font = { bold: true };
+          ws.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
 
           currentRow += 4;
         }
