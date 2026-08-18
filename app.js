@@ -1,5 +1,7 @@
 // Variable Global Penanda Mode Edit
 let editModeNoSurat = null; // null = Mode Tambah Baru, String = Mode Edit
+let activeRowForCamera = null;
+let mediaStreamTrack = null;
 
 const MASTER_DATA = {
     "CV. CITRA PERKASA": [
@@ -203,6 +205,88 @@ document.addEventListener('DOMContentLoaded', () => {
     switchTab('PPIC');
 });
 
+// --- HELPER KAMERA & FOTO ---
+async function openCamera(btn) {
+    activeRowForCamera = btn.closest('.item-row');
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('webcamVideo');
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false
+        });
+        video.srcObject = stream;
+        mediaStreamTrack = stream.getVideoTracks()[0];
+        modal.classList.remove('hidden');
+    } catch (err) {
+        alert('Gagal mengakses kamera. Pastikan Anda telah mengizinkan akses kamera!');
+        console.error("Camera error:", err);
+    }
+}
+
+function capturePhoto() {
+    if (!activeRowForCamera) return;
+
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.getElementById('photoCanvas');
+    const context = canvas.getContext('2d');
+
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+    const imgDataInput = activeRowForCamera.querySelector('.foto-data');
+    const previewContainer = activeRowForCamera.querySelector('.foto-preview-container');
+    const previewImg = activeRowForCamera.querySelector('.foto-preview');
+
+    imgDataInput.value = dataUrl;
+    previewImg.src = dataUrl;
+    previewContainer.classList.remove('hidden');
+
+    closeCameraModal();
+}
+
+function closeCameraModal() {
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('webcamVideo');
+
+    if (mediaStreamTrack) {
+        mediaStreamTrack.stop();
+        mediaStreamTrack = null;
+    }
+    video.srcObject = null;
+    modal.classList.add('hidden');
+}
+
+function handleFileUpload(inputElem) {
+    const file = inputElem.files[0];
+    if (!file) return;
+
+    const row = inputElem.closest('.item-row');
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        row.querySelector('.foto-data').value = dataUrl;
+        row.querySelector('.foto-preview').src = dataUrl;
+        row.querySelector('.foto-preview-container').classList.remove('hidden');
+    };
+
+    reader.readAsDataURL(file);
+}
+
+function removePhoto(btn) {
+    const row = btn.closest('.item-row');
+    row.querySelector('.foto-data').value = '';
+    row.querySelector('.foto-preview').src = '';
+    row.querySelector('.foto-preview-container').classList.add('hidden');
+    const fileInput = row.querySelector('.file-input');
+    if (fileInput) fileInput.value = '';
+}
+
 // 1. Inisialisasi Datalist Customer
 function initCustomerDropdown() {
     const custDatalist = document.getElementById('customerList');
@@ -254,7 +338,6 @@ function onPartChange(inputElem) {
             spekDatalist.appendChild(opt);
         });
 
-        // Auto fill jika match tepat 1 item
         if (matchingItems.length === 1) {
             const spekInput = row.querySelector('.spesifikasi');
             spekInput.value = matchingItems[0].spek;
@@ -284,7 +367,7 @@ function onSpekChange(inputElem) {
     updateFormTotals();
 }
 
-// 6. Menambah Baris Item Baru
+// 6. Menambah Baris Item Baru (dengan Fitur Kamera & Upload)
 function addItemRow() {
     const container = document.getElementById('itemContainer');
     const rowId = Date.now() + Math.floor(Math.random() * 1000);
@@ -305,9 +388,32 @@ function addItemRow() {
                 <datalist id="spekList_${rowId}" class="spekList"></datalist>
             </div>
         </div>
-        <div>
-            <input type="text" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 keterangan" placeholder="Ketik Keterangan (Opsional)...">
+
+        <div class="grid grid-cols-12 gap-2 items-center">
+            <div class="col-span-8">
+                <input type="text" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 keterangan" placeholder="Ketik Keterangan (Opsional)...">
+            </div>
+            <!-- Tombol Fitur Kamera & Upload Gambar -->
+            <div class="col-span-4 flex items-center justify-end gap-1">
+                <input type="hidden" class="foto-data">
+                <input type="file" accept="image/*" class="hidden file-input" onchange="handleFileUpload(this)">
+                
+                <button type="button" onclick="openCamera(this)" class="bg-blue-100 hover:bg-blue-600 text-blue-600 hover:text-white px-2 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Ambil Foto Kamera">
+                    <i class="fa-solid fa-camera"></i>
+                </button>
+                <button type="button" onclick="this.previousElementSibling.click()" class="bg-gray-200 hover:bg-gray-600 text-gray-700 hover:text-white px-2 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Upload dari Galeri">
+                    <i class="fa-solid fa-image"></i>
+                </button>
+            </div>
         </div>
+
+        <!-- Preview Foto Tersimpan -->
+        <div class="foto-preview-container hidden flex items-center gap-2 bg-white p-1.5 rounded-lg border border-gray-200 w-fit">
+            <img class="foto-preview h-10 w-10 object-cover rounded-md border">
+            <span class="text-[10px] text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Foto terlampir</span>
+            <button type="button" onclick="removePhoto(this)" class="text-red-500 hover:text-red-700 font-bold text-xs ml-1">&times;</button>
+        </div>
+
         <div class="grid grid-cols-12 gap-2 items-center">
             <input type="number" step="0.01" placeholder="Qty / Berat" oninput="updateFormTotals()" class="${isPPIC ? 'col-span-7' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold jumlah-qty" required>
             <select class="${isPPIC ? 'col-span-3' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold satuan">
@@ -359,7 +465,6 @@ function resetItemContainer() {
     addItemRow();
 }
 
-// Reset Mode Edit ke Mode Normal (Simpan Baru)
 function resetEditMode() {
     editModeNoSurat = null;
     const btnSubmit = document.getElementById('btnSubmit');
@@ -431,7 +536,7 @@ function switchTab(divisi) {
     loadTableData();
 }
 
-// 11. Muat Data Tabel dari Server (Posisi Tanggal & No Surat ditukar + Kolom Keterangan Ditambahkan)
+// 11. Muat Data Tabel dari Server
 async function loadTableData() {
     try {
         const divisi = document.getElementById('divisiAktif').value;
@@ -461,7 +566,13 @@ async function loadTableData() {
             
             const namaBarangList = item.items ? item.items.map(i => i.nama_barang || '-').join('<br>') : '-';
             const spesifikasiList = item.items ? item.items.map(i => i.spesifikasi || '-').join('<br>') : '-';
-            const keteranganList = item.items ? item.items.map(i => i.keterangan || '-').join('<br>') : '-';
+            
+            // Keterangan & Foto Preview pada Tabel
+            const keteranganList = item.items ? item.items.map(i => {
+                const ket = i.keterangan || '-';
+                const fotoHtml = i.foto ? `<br><a href="${i.foto}" target="_blank" class="text-blue-600 text-[10px] underline font-bold"><i class="fa-solid fa-image"></i> Lihat Foto</a>` : '';
+                return ket + fotoHtml;
+            }).join('<br><div class="my-1 border-b border-gray-100"></div>') : '-';
 
             const qtyPcsList = item.items ? item.items.map(i => {
                 const isPcs = (i.satuan || '').toLowerCase() === 'pcs';
@@ -519,12 +630,10 @@ async function editSuratJalan(noSurat) {
 
         editModeNoSurat = targetData.no_surat;
 
-        // Populate Form
         document.getElementById('tanggal').value = targetData.tanggal || '';
         document.getElementById('no_surat').value = targetData.no_surat || '';
         document.getElementById('customer').value = targetData.customer || targetData.mitra || '';
 
-        // Reset & Populate Item
         const container = document.getElementById('itemContainer');
         container.innerHTML = '';
 
@@ -542,6 +651,16 @@ async function editSuratJalan(noSurat) {
                 const ketElem = lastRow.querySelector('.keterangan');
                 if (ketElem) ketElem.value = item.keterangan || '';
 
+                // Memuat Foto jika ada
+                if (item.foto) {
+                    const fotoInput = lastRow.querySelector('.foto-data');
+                    if (fotoInput) {
+                        fotoInput.value = item.foto;
+                        lastRow.querySelector('.foto-preview').src = item.foto;
+                        lastRow.querySelector('.foto-preview-container').classList.remove('hidden');
+                    }
+                }
+
                 lastRow.querySelector('.jumlah-qty').value = item.qty || 0;
                 lastRow.querySelector('.satuan').value = item.satuan || 'Kg';
 
@@ -556,11 +675,9 @@ async function editSuratJalan(noSurat) {
 
         updateFormTotals();
 
-        // Ubah Tombol Submit
         const btnSubmit = document.getElementById('btnSubmit');
         btnSubmit.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Surat Jalan';
         
-        // Scroll Halus Ke Form
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err) {
@@ -569,7 +686,7 @@ async function editSuratJalan(noSurat) {
     }
 }
 
-// 12. Fungsi Hapus Data Surat Jalan dari Riwayat
+// 12. Fungsi Hapus Data Surat Jalan
 async function deleteSuratJalan(noSurat) {
     const decodedNoSurat = decodeURIComponent(noSurat);
     if (!confirm(`Apakah Anda yakin ingin menghapus surat jalan: ${decodedNoSurat}?`)) {
@@ -640,6 +757,7 @@ document.getElementById('formSuratJalan').addEventListener('submit', async (e) =
             nama_barang: row.querySelector('.nama-barang')?.value || '',
             spesifikasi: row.querySelector('.spesifikasi')?.value || '',
             keterangan: row.querySelector('.keterangan')?.value || '',
+            foto: row.querySelector('.foto-data')?.value || '', // Menampung hasil foto Base64
             qty: parseFloat(row.querySelector('.jumlah-qty')?.value) || 0,
             satuan: row.querySelector('.satuan')?.value || 'Kg',
             harga: hargaElem ? (parseFloat(hargaElem.value) || 0) : 0
