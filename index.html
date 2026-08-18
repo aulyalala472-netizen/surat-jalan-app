@@ -1,192 +1,104 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Surat Jalan - PT Megumi Brayan Indonesia</title>
+    <title>Sistem Input Barang & Galeri Foto</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
-<body class="bg-gradient-to-br from-red-50 via-white to-red-100 min-h-screen text-gray-800">
+<body class="bg-gray-100 font-sans p-4 md:p-8">
 
-    <header class="bg-gradient-to-r from-red-950 via-red-900 to-red-800 text-white shadow-xl border-b-4 border-red-600 sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3.5">
-                <div class="p-1 flex items-center justify-center">
-                    <img src="logo.png" alt="Logo PT Megumi Brayan Indonesia" class="h-12 w-auto object-contain drop-shadow-md">
-                </div>
-                <div>
-                    <h1 class="text-lg md:text-xl font-black tracking-wider text-white uppercase drop-shadow">
-                        PT MEGUMI BRAYAN INDONESIA
-                    </h1>
-                    <p class="text-xs text-red-200 flex items-center gap-1.5 mt-0.5 font-medium">
-                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        Sistem Informasi Pengelolaan Surat Jalan Masuk & Keluar
-                    </p>
-                </div>
-            </div>
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-boxes-packing text-red-600"></i> Form Input Data Barang
+        </h2>
 
-            <div class="flex bg-red-950/70 p-1.5 rounded-2xl border border-red-700/60 backdrop-blur-md shadow-inner">
-                <button id="tabPpic" onclick="switchTab('PPIC')" class="px-5 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 flex items-center gap-2 bg-white text-red-900 shadow-md">
-                    <i class="fa-solid fa-boxes-packing text-sm"></i> Surat Jalan Masuk
-                </button>
-                <button id="tabMarketing" onclick="switchTab('MARKETING')" class="px-5 py-2.5 text-xs font-bold rounded-lg transition-all duration-300 flex items-center gap-2 text-red-100 hover:text-white hover:bg-red-800/60">
-                    <i class="fa-solid fa-truck-fast text-sm"></i> Surat Jalan Keluar
-                </button>
-            </div>
-        </div>
-    </header>
+        <!-- Tabel Barang -->
+        <div class="overflow-x-auto mb-4">
+            <table class="w-full text-left border-collapse" id="itemsTable">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-700 text-sm border-b">
+                        <th class="p-3">Nama Barang</th>
+                        <th class="p-3 w-48">Foto</th>
+                        <th class="p-3 w-28 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Baris Item 1 (Default) -->
+                    <tr class="border-b item-row">
+                        <td class="p-3 align-top">
+                            <input type="text" name="nama_barang[]" placeholder="Masukkan nama barang..." class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-red-500">
+                        </td>
+                        <td class="p-3 align-top">
+                            <!-- Hidden input untuk menyimpan Base64 foto -->
+                            <input type="hidden" name="foto_barang[]" class="foto-data">
+                            
+                            <!-- Container Preview Foto -->
+                            <div class="foto-preview-container hidden mb-2 relative group w-24 h-24 rounded-lg overflow-hidden border">
+                                <img src="" alt="Preview" class="foto-preview w-full h-full object-cover">
+                                <button type="button" onclick="removePhoto(this)" class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-80 hover:opacity-100">&times;</button>
+                            </div>
 
-    <main class="container mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        <!-- FORM INPUT -->
-        <div class="lg:col-span-5 bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden flex flex-col justify-between">
-            <div>
-                <div class="bg-gradient-to-r from-red-700 to-red-600 px-6 py-4 text-white flex justify-between items-center" id="formHeaderBg">
-                    <div>
-                        <h2 class="text-base font-bold flex items-center gap-2" id="formTitle">
-                            <i class="fa-solid fa-file-pen"></i> Form Surat Jalan Masuk
-                        </h2>
-                        <p class="text-xs text-red-100 mt-0.5" id="formSubtitle">Input data transaksi penerimaan barang</p>
-                    </div>
-                    <span id="badgeDivisi" class="bg-white/20 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-md border border-white/30">
-                        MASUK
-                    </span>
-                </div>
-
-                <form id="formSuratJalan" class="p-6 space-y-4">
-                    <input type="hidden" id="divisiAktif" value="PPIC">
-                    <input type="hidden" id="tipeAktif" value="MASUK">
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Tanggal</label>
-                            <input type="date" id="tanggal" required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-gray-700 mb-1">No. Surat Jalan</label>
-                            <input type="text" id="no_surat" placeholder="SJ-IN/2026/001" required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500 outline-none font-semibold text-red-950">
-                        </div>
-                    </div>
-
-                    <!-- INPUT / DROPDOWN CUSTOMER -->
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-gray-700 mb-1">Customer / Vendor</label>
-                        <input type="text" id="customer" list="customerList" oninput="onCustomerChange()" placeholder="Pilih atau ketik Customer..." required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:ring-2 focus:ring-red-500 outline-none">
-                        <datalist id="customerList"></datalist>
-                    </div>
-
-                    <!-- DETAIL BARANG & HARGA -->
-                    <div class="border-t border-red-100 pt-4 mt-2">
-                        <div class="flex justify-between items-center mb-2">
-                            <label id="formLabelBarang" class="block text-xs font-extrabold uppercase text-red-950">
-                                <i class="fa-solid fa-boxes-stacked mr-1 text-red-600"></i> Detail Barang
-                            </label>
-                        </div>
-
-                        <!-- Baris Item Dibuat Secara Dinamis oleh JavaScript -->
-                        <div id="itemContainer" class="space-y-3"></div>
-
-                        <div id="formTotalContainer" style="display: none;" class="mt-3 p-3 bg-red-50/70 border border-red-200 rounded-xl flex justify-between items-center text-xs">
-                            <span class="font-bold text-gray-600">Grand Total Rp:</span>
-                            <span id="formGrandTotal" class="font-black text-red-800 text-sm">Rp 0</span>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="btnSubmit" class="w-full mt-4 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition duration-200 shadow-lg shadow-red-700/30 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> Simpan Surat Jalan Masuk
-                    </button>
-                </form>
-            </div>
+                            <button type="button" onclick="openCameraModal(this)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1">
+                                <i class="fa-solid fa-camera"></i> Upload / Ambil Foto
+                            </button>
+                        </td>
+                        <td class="p-3 align-top text-center">
+                            <button type="button" onclick="removeRow(this)" class="px-2 py-1.5 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-xs font-semibold">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <!-- TABEL DATA -->
-        <div class="lg:col-span-7 bg-white rounded-2xl shadow-xl border border-red-100 overflow-hidden flex flex-col justify-between">
-            <div>
-                <div class="p-5 border-b border-gray-100 bg-gradient-to-r from-red-50/60 to-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-red-950 flex items-center gap-2" id="tableTitle">
-                            <i class="fa-solid fa-clock-rotate-left text-red-600"></i> Riwayat Surat Jalan Masuk
-                        </h2>
-                        <p class="text-xs text-gray-500 mt-0.5">Daftar transaksi aktif dalam sistem</p>
-                    </div>
+        <button type="button" onclick="addNewRow()" class="px-4 py-2 bg-gray-800 hover:bg-gray-900 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 mb-6">
+            <i class="fa-solid fa-plus"></i> Tambah Baris
+        </button>
+    </div>
 
-                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                        <div class="relative flex-1 sm:w-40">
-                            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari data..." class="w-full pl-8 pr-3 py-2 bg-white border border-gray-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500 outline-none">
-                            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-gray-400 text-xs"></i>
-                        </div>
-                        
-                        <button onclick="exportRekapBulanan()" class="bg-red-800 hover:bg-red-900 text-white text-xs px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-md transition whitespace-nowrap">
-                            <i class="fa-solid fa-calendar-check text-xs"></i> Rekap Bulanan
-                        </button>
-
-                        <button onclick="exportExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 shadow-md transition whitespace-nowrap">
-                            <i class="fa-solid fa-file-excel text-xs"></i> Excel Semua
-                        </button>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs border-separate border-spacing-y-2">
-                        <thead>
-                            <tr class="text-red-900 font-extrabold uppercase text-[10px] tracking-wider">
-                                <th class="p-2.5 bg-red-100/70 rounded-l-xl">Tanggal</th>
-                                <th class="p-2.5 bg-red-100/70">No. Surat</th>
-                                <th class="p-2.5 bg-red-100/70">Customer</th>
-                                <th class="p-2.5 bg-red-100/70">Nama Barang</th>
-                                <th class="p-2.5 bg-red-100/70 text-center">Qty Pcs</th>
-                                <th class="p-2.5 bg-red-100/70 text-center">Qty Kg</th>
-                                <th class="p-2.5 bg-red-100/70">Spesifikasi</th>
-                                <th class="p-2.5 bg-red-100/70">Keterangan</th>
-                                <th id="thHarga" style="display: none;" class="p-2.5 bg-red-100/70 text-right">Total Harga</th>
-                                <th class="p-2.5 bg-red-100/70 text-center rounded-r-xl">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody" class="divide-y-0">
-                            <!-- Data diisi oleh app.js -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-red-50/50 p-4 border-t border-red-100 flex justify-between items-center text-xs">
-                <span class="text-gray-600 font-medium">Total Surat Jalan Registered:</span>
-                <span id="totalBadge" class="bg-red-800 text-white font-bold px-3 py-1 rounded-full text-xs shadow-sm">0 Dokumen</span>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- MODAL KAMERA -->
+    <!-- Modal Kamera & Galeri -->
     <div id="cameraModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-4 space-y-3 shadow-2xl border border-gray-100">
             <div class="flex justify-between items-center border-b pb-2">
                 <h3 class="font-bold text-sm text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-camera text-red-600"></i> Ambil Foto Barang
+                    <i class="fa-solid fa-image text-red-600"></i> Ambil / Pilih Foto Barang
                 </h3>
                 <button type="button" onclick="closeCameraModal()" class="text-gray-400 hover:text-red-600 font-bold text-lg">&times;</button>
             </div>
             
+            <!-- Live Preview Kamera -->
             <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center">
                 <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
                 <canvas id="photoCanvas" class="hidden"></canvas>
             </div>
 
-            <div class="flex gap-2 justify-end pt-2">
-                <button type="button" onclick="closeCameraModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-300">
-                    Batal
+            <!-- Hidden Input File untuk Galeri -->
+            <input type="file" id="galleryFileInput" accept="image/*" class="hidden" onchange="handleGalleryUpload(this)">
+
+            <div class="flex gap-2 justify-between pt-2">
+                <!-- Tombol Tambah dari Galeri -->
+                <button type="button" onclick="document.getElementById('galleryFileInput').click()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5">
+                    <i class="fa-solid fa-folder-open"></i> Galeri
                 </button>
-                <button type="button" onclick="capturePhoto()" class="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5">
-                    <i class="fa-solid fa-circle-dot"></i> Ambil Foto
-                </button>
+
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeCameraModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-300">
+                        Batal
+                    </button>
+                    <button type="button" onclick="capturePhoto()" class="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5">
+                        <i class="fa-solid fa-camera"></i> Ambil Foto
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- JavaScript Link -->
     <script src="app.js"></script>
 </body>
 </html>
