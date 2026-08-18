@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const ExcelJS = require('exceljs');
 
 const app = express();
@@ -11,32 +10,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Path lokasi penyimpanan file database JSON lokal
-const DATA_FILE = path.join(__dirname, 'database.json');
-
-// Helper membaca data dari file JSON
-function loadData() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) {
-      fs.writeFileSync(DATA_FILE, JSON.stringify([]), 'utf8');
-      return [];
-    }
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    return JSON.parse(data || '[]');
-  } catch (err) {
-    console.error("Gagal membaca file database:", err);
-    return [];
-  }
-}
-
-// Helper menyimpan data ke file JSON
-function saveData(data) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error("Gagal menyimpan file database:", err);
-  }
-}
+// In-Memory Database (Aman untuk Vercel Serverless)
+let databaseSuratJalan = [];
 
 // Helper untuk membersihkan nama Sheet Excel
 function sanitizeSheetName(name) {
@@ -48,10 +23,9 @@ function sanitizeSheetName(name) {
   return clean || "CUSTOMER";
 }
 
-// Helper Generator Excel File
+// Helper Generator Excel File (On-the-Fly Buffer)
 async function generateExcelBuffer(divisiFilter) {
   const workbook = new ExcelJS.Workbook();
-  let databaseSuratJalan = loadData();
   let dataFiltered = [...databaseSuratJalan];
 
   if (divisiFilter) {
@@ -243,7 +217,6 @@ async function generateExcelBuffer(divisiFilter) {
 app.get('/api/surat-jalan', (req, res) => {
   try {
     const { divisi } = req.query;
-    let databaseSuratJalan = loadData();
     let results = [...databaseSuratJalan];
 
     if (divisi) {
@@ -265,15 +238,12 @@ app.post('/api/surat-jalan', (req, res) => {
       return res.status(400).json({ success: false, message: 'Nomor surat jalan wajib diisi!' });
     }
 
-    let databaseSuratJalan = loadData();
-
     const ada = databaseSuratJalan.some(item => item.no_surat === dataBaru.no_surat);
     if (ada) {
       return res.status(400).json({ success: false, message: 'Nomor Surat Jalan sudah terdaftar!' });
     }
 
     databaseSuratJalan.push(dataBaru);
-    saveData(databaseSuratJalan); // Simpan ke file
 
     return res.status(201).json({
       success: true,
@@ -291,8 +261,6 @@ app.put('/api/surat-jalan/:no_surat', (req, res) => {
     const { no_surat } = req.params;
     const decodedNoSurat = decodeURIComponent(no_surat);
     const dataUpdate = req.body;
-
-    let databaseSuratJalan = loadData();
 
     const index = databaseSuratJalan.findIndex(item => item.no_surat === decodedNoSurat);
 
@@ -312,8 +280,6 @@ app.put('/api/surat-jalan/:no_surat', (req, res) => {
       ...dataUpdate
     };
 
-    saveData(databaseSuratJalan); // Simpan perbaikan ke file
-
     return res.status(200).json({
       success: true,
       message: 'Data surat jalan berhasil diperbarui!',
@@ -330,8 +296,6 @@ app.delete('/api/surat-jalan/:no_surat', (req, res) => {
     const { no_surat } = req.params;
     const decodedNoSurat = decodeURIComponent(no_surat);
 
-    let databaseSuratJalan = loadData();
-
     const index = databaseSuratJalan.findIndex(item => item.no_surat === decodedNoSurat);
 
     if (index === -1) {
@@ -339,7 +303,6 @@ app.delete('/api/surat-jalan/:no_surat', (req, res) => {
     }
 
     databaseSuratJalan.splice(index, 1);
-    saveData(databaseSuratJalan); // Simpan perubahan ke file
 
     return res.status(200).json({
       success: true,
@@ -350,7 +313,7 @@ app.delete('/api/surat-jalan/:no_surat', (req, res) => {
   }
 });
 
-// API 5: EXPORT EXCEL
+// API 5: EXPORT EXCEL (ON-THE-FLY DOWNLOAD)
 app.get('/api/export/excel', async (req, res) => {
   try {
     const { divisi } = req.query;
