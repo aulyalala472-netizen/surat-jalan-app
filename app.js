@@ -177,10 +177,12 @@ const MASTER_DATA = {
         { part: "LONG ROOT NUT H37", spek: "BLUE CR3+", harga: 4000, unit: "KG" }
     ],
     "CV. INDOSTAR SEJAHTERA": [
-        { part: "HEXAGON 3/8 \"X5\"", spek: "HALF DRAT", harga: 2000, unit: "KG" },
-        { part: "SELONGSONG 8", spek: "YELLOW", harga: 2000, unit: "KG" },
-        { part: "SELONGSOG 10", spek: "YELLOW", harga: 2000, unit: "KG" },
-        { part: "SELONGSONG M10", spek: "YELLOW", harga: 2000, unit: "KG" }
+        { part: "HEXAGON 3/8 \"X5\"", spek: "HALF DRAT", harga: 2100, unit: "KG" },
+        { part: "SELONGSONG 8", spek: "YELLOW", harga: 2100, unit: "KG" },
+        { part: "SELONGSOG 10", spek: "YELLOW", harga: 2100, unit: "KG" },
+        { part: "SELONGSONG M10", spek: "YELLOW", harga: 2100, unit: "KG" },
+        { part: "MUR", spek: "YELLOW", harga: 2000, unit: "KG" },
+        { part: "RING", spek: "YELLOW", harga: 2300, unit: "KG" }
     ],
     "PT. MATRA RODA PIRANTI": [
         { part: "FRAME P3 LOUNGE CHAIR", spek: "BLUE CR3+", harga: 50000, unit: "PCS" },
@@ -188,7 +190,9 @@ const MASTER_DATA = {
         { part: "CHAIR LOUNGE", spek: "BLUE CR3+", harga: 70000, unit: "PCS" }
     ],
     "PT. ELYON INOVASI PERKASA": [
-        { part: "ITEM 1", spek: "WHITE", harga: 5500, unit: "KG" }
+        { part: "SCREW DE", spek: "WHITE", harga: 5500, unit: "KG" },
+        { part: "TERMINAL", spek: "YELLOW", harga: 2200, unit: "KG" },
+        { part: "M5X11,7", spek: "YELLOW", harga: 2000, unit: "KG" }
     ]
 };
 
