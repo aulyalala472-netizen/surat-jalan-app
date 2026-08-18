@@ -29,7 +29,7 @@ const MASTER_DATA = {
         { part: "BM HEX 88 M16X45MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BM HEX 88 M18X40MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BM HEX 88 M16X30MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
-        { part: "BO HEX 88 M16X90 MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
+        { part: "BO HEX 88 M16X70 MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BO HEX 10.9 M12X40MM HT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BO HEX 88 M08X40 MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
         { part: "BO HEX 88 M12X110MM FT", spek: "KUNING", harga: 3500, unit: "KG" },
@@ -110,7 +110,8 @@ const MASTER_DATA = {
         { part: "KZR 14 GRAM", spek: "YELLOW", harga: 5500, unit: "KG" },
         { part: "MIO 12,5X11,1 (8 GRAM)", spek: "YELLOW", harga: 5500, unit: "KG" },
         { part: "BEAT KARBU (6 GRAM)", spek: "YELLOW", harga: 5500, unit: "KG" },
-        { part: "17x13,4 x 13,5 (10 GR)", spek: "YELLOW", harga: 5500, unit: "KG" }
+        { part: "17x13,4 x 13,5 (10 GR)", spek: "YELLOW", harga: 5500, unit: "KG" },
+        { part: "12,5x16,2 (8 GR)", spek: "BLACK", harga: 12000, unit: "KG"}
     ],
     "PT. MEGA WAJA CORPORINDO": [
         { part: "JF/MS M6X15", spek: "PUTIH", harga: 2500, unit: "KG" },
@@ -190,8 +191,8 @@ const MASTER_DATA = {
         { part: "CHAIR LOUNGE", spek: "BLUE CR3+", harga: 70000, unit: "PCS" }
     ],
     "PT. ELYON INOVASI PERKASA": [
-        { part: "SCREW DE", spek: "WHITE", harga: 5500, unit: "KG" },
-        { part: "TERMINAL", spek: "YELLOW", harga: 2200, unit: "KG" },
+        { part: "SCREW DELTA", spek: "WHITE", harga: 5500, unit: "KG" },
+        { part: "TERMINAL KOTAK S BESAR", spek: "YELLOW", harga: 2200, unit: "KG" },
         { part: "M5X11,7", spek: "YELLOW", harga: 2000, unit: "KG" }
     ]
 };
