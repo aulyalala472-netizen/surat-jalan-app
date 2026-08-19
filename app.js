@@ -225,6 +225,15 @@ async function openCamera(btn) {
     }
 }
 
+// Trigger input file galeri dari tombol Galeri
+function openGallery(btn) {
+    const row = btn.closest('.item-row');
+    const fileInput = row.querySelector('.file-input');
+    if (fileInput) {
+        fileInput.click();
+    }
+}
+
 function capturePhoto() {
     if (!activeRowForCamera) return;
 
@@ -285,6 +294,72 @@ function removePhoto(btn) {
     row.querySelector('.foto-preview-container').classList.add('hidden');
     const fileInput = row.querySelector('.file-input');
     if (fileInput) fileInput.value = '';
+}
+
+// ... (semua fungsi konfigurasi MASTER_DATA dan init tetap sama) ...
+
+// 6. Menambah Baris Item Baru (dengan Fitur Kamera & Galeri Terpisah)
+function addItemRow() {
+    const container = document.getElementById('itemContainer');
+    const rowId = Date.now() + Math.floor(Math.random() * 1000);
+    const divisi = document.getElementById('divisiAktif').value;
+    const isPPIC = divisi === 'PPIC';
+
+    const div = document.createElement('div');
+    div.className = 'item-row bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2 relative';
+    
+    div.innerHTML = `
+        <div class="grid grid-cols-12 gap-2">
+            <div class="col-span-6">
+                <input type="text" list="partList_${rowId}" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 nama-barang" placeholder="Pilih / Ketik Part..." oninput="onPartChange(this)" required>
+                <datalist id="partList_${rowId}" class="partList"></datalist>
+            </div>
+            <div class="col-span-6">
+                <input type="text" list="spekList_${rowId}" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 spesifikasi" placeholder="Pilih / Ketik Spesifikasi..." oninput="onSpekChange(this)" required>
+                <datalist id="spekList_${rowId}" class="spekList"></datalist>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center">
+            <div class="col-span-7">
+                <input type="text" class="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-800 keterangan" placeholder="Ketik Keterangan (Opsional)...">
+            </div>
+            
+            <!-- Tombol Kamera & Pilih Gambar Galeri -->
+            <div class="col-span-5 flex items-center justify-end gap-1">
+                <input type="hidden" class="foto-data">
+                <input type="file" accept="image/*" class="hidden file-input" onchange="handleFileUpload(this)">
+                
+                <button type="button" onclick="openCamera(this)" class="bg-blue-100 hover:bg-blue-600 text-blue-600 hover:text-white px-2 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Ambil Foto Kamera">
+                    <i class="fa-solid fa-camera"></i> <span class="hidden sm:inline">Kamera</span>
+                </button>
+                <button type="button" onclick="openGallery(this)" class="bg-emerald-100 hover:bg-emerald-600 text-emerald-700 hover:text-white px-2 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Pilih dari Galeri">
+                    <i class="fa-solid fa-image"></i> <span class="hidden sm:inline">Galeri</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Foto Tersimpan -->
+        <div class="foto-preview-container hidden flex items-center gap-2 bg-white p-1.5 rounded-lg border border-gray-200 w-fit">
+            <img class="foto-preview h-10 w-10 object-cover rounded-md border">
+            <span class="text-[10px] text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Gambar terlampir</span>
+            <button type="button" onclick="removePhoto(this)" class="text-red-500 hover:text-red-700 font-bold text-xs ml-1" title="Hapus Gambar">&times;</button>
+        </div>
+
+        <div class="grid grid-cols-12 gap-2 items-center">
+            <input type="number" step="0.01" placeholder="Qty / Berat" oninput="updateFormTotals()" class="${isPPIC ? 'col-span-7' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold jumlah-qty" required>
+            <select class="${isPPIC ? 'col-span-3' : 'col-span-3'} p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold satuan">
+                <option value="Kg">Kg</option>
+                <option value="Pcs">Pcs</option>
+            </select>
+            ${!isPPIC ? `<input type="number" placeholder="Harga" oninput="updateFormTotals()" class="col-span-4 p-2 bg-white border border-gray-300 rounded-lg text-xs font-bold text-red-950 harga-satuan" required>` : ''}
+            <button type="button" onclick="removeItemRow(this)" class="col-span-2 bg-gray-200 hover:bg-red-100 text-red-600 p-2 rounded-lg text-xs font-bold transition">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+    updatePartDropdown(div);
 }
 
 // 1. Inisialisasi Datalist Customer
